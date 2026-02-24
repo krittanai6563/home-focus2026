@@ -10,16 +10,20 @@ $profile_img = $_SESSION['profile_img'] ?: 'default-profile.png';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scan Lead - <?php echo $company_name; ?></title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+    <title>Scan Lead - <?php echo htmlspecialchars($company_name); ?></title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
+        /* ---------------------------------------------------
+           ดีไซน์ดั้งเดิมของคุณ (หน้าสแกน & ค้นหา)
+        --------------------------------------------------- */
         :root {
             --hba-dark: #001a33;
             --hba-navy: #003366;
             --hba-blue: #0056b3;
+            --hba-sky: #00a8ff; /* เพิ่มสีฟ้าสำหรับไอคอน */
             --hba-light: #f8fafd;
         }
 
@@ -73,47 +77,89 @@ $profile_img = $_SESSION['profile_img'] ?: 'default-profile.png';
         .divider:not(:empty)::before { margin-right: .5em; }
         .divider:not(:empty)::after { margin-left: .5em; }
 
-        #scan-result { display: none; }
+        #preview-section, #scan-result { display: none; }
+
+        /* ---------------------------------------------------
+           ดีไซน์ใหม่เพิ่มเติม (เฉพาะกล่องแสดงข้อมูล Grid)
+        --------------------------------------------------- */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+        .info-box {
+            background: #f8fafd;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 15px;
+            transition: all 0.2s;
+        }
+        .info-box:hover {
+            border-color: var(--hba-sky);
+            background: #f0f7ff;
+        }
+        .info-label { font-size: 0.75rem; color: #64748b; margin-bottom: 3px; font-weight: 600; text-transform: uppercase; }
+        .info-value { font-size: 0.9rem; color: var(--hba-navy); font-weight: 600; }
+        .info-icon { color: var(--hba-sky); font-size: 1.1rem; width: 24px; text-align: center; margin-right: 5px; }
     </style>
 </head>
 <body>
 
-<nav class="navbar navbar-dark sticky-top">
-    <div class="container">
-        <div class="navbar-brand d-flex align-items-center">
-            <img src="assets/img/<?php echo $profile_img; ?>" class="rounded-circle profile-thumb me-2" alt="Profile">
-            <span class="d-none d-sm-inline">สแกนเก็บ Lead</span>
-        </div>
-        <a href="dashboard.php" class="btn btn-sm btn-outline-light rounded-pill px-3">
-            <i class="fas fa-arrow-left"></i> กลับ
-        </a>
-    </div>
-</nav>
+<?php include '../includes/navbar.php'; ?>
 
-<div class="container py-4 pb-5">
+<div class="container py-4 pb-5" style="max-width: 600px;">
     
     <div class="text-center mb-4">
         <h5 class="font-prompt fw-bold text-navy">กล้องสแกนคิวอาร์ (สีฟ้า)</h5>
-        <p class="text-muted small">วางคิวอาร์โค้ดให้อยู่ในกรอบเพื่อบันทึกข้อมูล</p>
+        <p class="text-muted small">วางคิวอาร์โค้ดให้อยู่ในกรอบเพื่อค้นหาข้อมูลลูกค้า</p>
     </div>
 
     <div id="reader" class="mb-4"></div>
+
+    <div id="preview-section" class="card card-custom animate__animated animate__fadeIn mb-4" style="border-top: 4px solid var(--hba-sky);">
+        <div class="card-body text-center py-4 px-sm-4">
+            
+            <div class="d-flex align-items-center justify-content-center mb-3">
+                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center text-primary" style="width: 60px; height: 60px;">
+                    <i class="fas fa-user-check fa-2x"></i>
+                </div>
+            </div>
+            
+            <h4 id="preview-name" class="font-prompt fw-bold text-navy mb-1"></h4>
+            <p id="preview-phone" class="text-muted mb-4 font-prompt bg-light d-inline-block px-3 py-1 rounded-pill small"></p>
+            
+            <div id="preview-details" class="info-grid font-prompt">
+                </div>
+            
+            <input type="hidden" id="current-qr-data">
+            
+            <div class="d-flex gap-2 justify-content-center">
+                <button onclick="confirmCheckIn()" class="btn btn-success btn-action w-50 shadow-sm">
+                    <i class="fas fa-save me-1"></i> ยืนยันบันทึก
+                </button>
+                <button onclick="resetScanner()" class="btn btn-outline-secondary btn-action w-50 shadow-sm">
+                    <i class="fas fa-times me-1"></i> ยกเลิก
+                </button>
+            </div>
+        </div>
+    </div>
 
     <div id="scan-result" class="card card-custom animate__animated animate__fadeIn">
         <div class="card-body text-center py-5">
             <div id="result-icon" class="mb-3"></div>
             <h4 id="visitor-name" class="font-prompt fw-bold mb-1 text-navy"></h4>
-            <p id="visitor-phone" class="text-muted mb-4"></p>
-            <div id="status-msg" class="alert py-2 mb-4"></div>
+            <div id="status-msg" class="alert py-2 mb-4 font-prompt rounded-pill fw-bold"></div>
 
             <div id="no-data-action" class="mb-4 d-none text-center">
-                <p class="text-danger small mb-3">ไม่พบข้อมูลในฐานข้อมูล กรุณาลงทะเบียนใหม่</p>
+                <p class="text-danger small mb-3">ไม่พบข้อมูลลูกค้าในระบบ อาจเป็นลูกค้าใหม่</p>
                 <a href="register_walkin.php" class="btn btn-warning-custom btn-action w-100 shadow-sm mb-2">
                     <i class="fas fa-user-plus me-2"></i>ลงทะเบียนลูกค้า Walk-in
                 </a>
             </div>
 
-            <button onclick="resetScanner()" class="btn btn-navy w-100 btn-action shadow-sm">สแกน/ค้นหาคนต่อไป</button>
+            <button onclick="resetScanner()" class="btn btn-navy w-100 btn-action shadow-sm">สแกนคนต่อไป</button>
         </div>
     </div>
 
@@ -132,9 +178,6 @@ $profile_img = $_SESSION['profile_img'] ?: 'default-profile.png';
         </div>
     </div>
 
-    <div class="text-center mt-5">
-        <p class="text-muted" style="font-size: 0.7rem;">Official Scan Portal - Home Focus 2026</p>
-    </div>
 </div>
 
 <script>
@@ -144,23 +187,82 @@ let html5QrcodeScanner = new Html5QrcodeScanner("reader", {
     aspectRatio: 1.0 
 });
 
-function onScanSuccess(decodedText) {
-    processData(decodedText);
-}
+function onScanSuccess(decodedText) { processData(decodedText); }
 
 function manualSearch() {
     const phone = document.getElementById('manual-phone').value;
-    if(phone.length < 9) {
-        alert('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง');
-        return;
-    }
+    if(phone.length < 9) { alert('กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง'); return; }
     processData(phone);
 }
 
 function processData(qrData) {
-    html5QrcodeScanner.pause();
+    try { html5QrcodeScanner.pause(); } catch (err) {}
+
     document.getElementById('reader').style.display = 'none';
     document.getElementById('manual-section').style.display = 'none';
+    document.getElementById('scan-result').style.display = 'none';
+    
+    document.getElementById('preview-section').style.display = 'block';
+    document.getElementById('preview-name').innerHTML = '<i class="fas fa-circle-notch fa-spin text-primary"></i> กำลังดึงข้อมูล...';
+    document.getElementById('preview-phone').innerText = '';
+    document.getElementById('preview-details').innerHTML = '';
+    
+    fetch('../api/get_visitor_info.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'qr_data=' + encodeURIComponent(qrData)
+    })
+    .then(async response => {
+        const isJson = response.headers.get('content-type')?.includes('application/json');
+        if (!response.ok || !isJson) throw new Error('ระบบขัดข้อง: Server ไม่ตอบสนองเป็น JSON');
+        return await response.json();
+    })
+    .then(data => {
+        if(data.success) {
+            document.getElementById('preview-name').innerText = data.name;
+            document.getElementById('preview-phone').innerHTML = `<i class="fas fa-mobile-alt me-1 text-primary"></i> ${data.phone}`;
+            document.getElementById('current-qr-data').value = qrData;
+            
+            // นำข้อมูลมาเรียงในกริดดีไซน์สวยๆ
+            document.getElementById('preview-details').innerHTML = `
+                <div class="info-box">
+                    <div class="info-label">งบประมาณ</div>
+                    <div class="info-value"><i class="fas fa-coins info-icon"></i>${data.budget || '-'}</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">ทำเล / โซน</div>
+                    <div class="info-value"><i class="fas fa-map-marker-alt info-icon"></i>${data.region || '-'}</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">พื้นที่ใช้สอย</div>
+                    <div class="info-value"><i class="fas fa-expand-arrows-alt info-icon"></i>${data.area || '-'}</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">จำนวนชั้น</div>
+                    <div class="info-value"><i class="fas fa-layer-group info-icon"></i>${data.floor || '-'}</div>
+                </div>
+            `;
+        } else {
+            document.getElementById('preview-section').style.display = 'none';
+            showResultCard(false, 'ไม่พบข้อมูลลูกค้า', data.message);
+            document.getElementById('no-data-action').classList.remove('d-none');
+        }
+    })
+    .catch(error => { alert(error.message); resetScanner(); });
+}
+
+function resetScanner() {
+    document.getElementById('preview-section').style.display = 'none';
+    document.getElementById('scan-result').style.display = 'none';
+    document.getElementById('reader').style.display = 'block';
+    document.getElementById('manual-section').style.display = 'block';
+    document.getElementById('manual-phone').value = '';
+    try { html5QrcodeScanner.resume(); } catch (err) {}
+}
+
+function confirmCheckIn() {
+    const qrData = document.getElementById('current-qr-data').value;
+    document.getElementById('preview-section').style.display = 'none';
     
     fetch('../api/record_visit.php', {
         method: 'POST',
@@ -169,36 +271,27 @@ function processData(qrData) {
     })
     .then(response => response.json())
     .then(data => {
-        const resCard = document.getElementById('scan-result');
-        resCard.style.display = 'block';
-        
         if(data.success) {
-            document.getElementById('result-icon').innerHTML = '<i class="fas fa-check-circle text-success fa-4x"></i>';
-            document.getElementById('visitor-name').innerText = data.name;
-            document.getElementById('visitor-phone').innerText = 'เบอร์โทร: ' + data.phone;
-            document.getElementById('status-msg').className = 'alert alert-success py-2 font-prompt';
-            document.getElementById('status-msg').innerText = 'บันทึกข้อมูลลีดเรียบร้อยแล้ว';
-            
+            showResultCard(true, data.name, data.message || 'จัดเก็บ Lead สำเร็จ!');
             document.getElementById('no-data-action').classList.add('d-none');
         } else {
-            document.getElementById('result-icon').innerHTML = '<i class="fas fa-times-circle text-danger fa-4x"></i>';
-            document.getElementById('visitor-name').innerText = 'ไม่พบข้อมูล';
-            document.getElementById('visitor-phone').innerText = '';
-            document.getElementById('status-msg').className = 'alert alert-danger py-2 font-prompt';
-            document.getElementById('status-msg').innerText = data.message;
-
-            // แสดงส่วนปุ่ม Walk-in ทันทีเมื่อไม่พบข้อมูล
-            document.getElementById('no-data-action').classList.remove('d-none');
+            showResultCard(false, data.name || 'ผิดพลาด', data.message);
         }
     });
 }
 
-function resetScanner() {
-    document.getElementById('scan-result').style.display = 'none';
-    document.getElementById('reader').style.display = 'block';
-    document.getElementById('manual-section').style.display = 'block';
-    document.getElementById('manual-phone').value = '';
-    html5QrcodeScanner.resume();
+function showResultCard(isSuccess, name, msg) {
+    const resCard = document.getElementById('scan-result');
+    resCard.style.display = 'block';
+    
+    const icon = isSuccess ? '<i class="fas fa-check-circle text-success fa-4x shadow-sm rounded-circle bg-white"></i>' 
+                           : '<i class="fas fa-exclamation-circle text-danger fa-4x shadow-sm rounded-circle bg-white"></i>';
+    const alertClass = isSuccess ? 'alert alert-success' : 'alert alert-danger';
+    
+    document.getElementById('result-icon').innerHTML = icon;
+    document.getElementById('visitor-name').innerText = name;
+    document.getElementById('status-msg').className = alertClass + ' py-2 font-prompt rounded-pill fw-bold';
+    document.getElementById('status-msg').innerText = msg;
 }
 
 html5QrcodeScanner.render(onScanSuccess);
