@@ -15,8 +15,8 @@ $nav_profile_img = (!empty($_SESSION['profile_img']) && $_SESSION['profile_img']
 
     /* 1. Glassmorphism Design (โปร่งแสงและเบลอ) */
     .modern-navbar {
-        background: rgba(0, 35, 71, 0.85); /* สีกรมท่าโปร่งแสง */
-        backdrop-filter: blur(12px); /* เอฟเฟกต์กระจกฝ้า */
+        background: rgba(0, 35, 71, 0.85); 
+        backdrop-filter: blur(12px); 
         -webkit-backdrop-filter: blur(12px);
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
@@ -62,7 +62,7 @@ $nav_profile_img = (!empty($_SESSION['profile_img']) && $_SESSION['profile_img']
     }
 
     .modern-nav-link:hover::after, .modern-nav-link.active::after {
-        width: 70%; /* ขีดเส้นใต้วิ่งออกมาเมื่อโฮเวอร์ */
+        width: 70%; 
     }
 
     /* 3. กรอบโปรไฟล์แบบแคปซูล (Pill Profile) */
@@ -158,6 +158,11 @@ $nav_profile_img = (!empty($_SESSION['profile_img']) && $_SESSION['profile_img']
                         <i class="fas fa-user-plus me-1 opacity-75"></i> ลูกค้า Walk-in
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link modern-nav-link" href="index.php">
+                        <i class="fas fa-file-alt me-1 opacity-75"></i> รายงาน
+                    </a>
+                </li>
             </ul>
             
             <div class="d-flex align-items-center mt-3 mt-lg-0">
@@ -189,7 +194,7 @@ $nav_profile_img = (!empty($_SESSION['profile_img']) && $_SESSION['profile_img']
                         </li>
                         <li><hr class="dropdown-divider my-2 opacity-10"></li>
                         <li>
-                            <a class="dropdown-item modern-dropdown-item text-danger" href="../logout.php">
+                            <a class="dropdown-item modern-dropdown-item text-danger" href="logout.php">
                                 <div class="d-flex align-items-center">
                                     <div class="bg-danger bg-opacity-10 rounded-circle p-2 me-3 text-center" style="width: 35px; height: 35px; line-height: 18px;">
                                         <i class="fas fa-sign-out-alt"></i>

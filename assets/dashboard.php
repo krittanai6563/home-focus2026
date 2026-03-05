@@ -3,28 +3,47 @@
 require_once '../includes/auth.php'; 
 require_once '../config/db_config.php';
 
-// 2. ดึงข้อมูลจาก Session ที่เก็บไว้ตอน Login
+// 2. ดึงข้อมูลจาก Session
 $exhibitor_id = $_SESSION['exhibitor_id'];
 $company_name = $_SESSION['company_name'];
 $profile_img  = $_SESSION['profile_img'] ?: 'default-profile.png';
 $today        = date('Y-m-d');
 
+// --- เพิ่มส่วนการแปลงวันที่เป็นภาษาไทย ---
+$thai_months = [
+    "", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+    "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+];
+$date_parts = explode('-', $today);
+$day = (int)$date_parts[2];
+$month = $thai_months[(int)$date_parts[1]];
+$year = (int)$date_parts[0] + 543; // แปลงเป็น พ.ศ.
+$thai_date_full = "$day $month $year";
+// ---------------------------------------
+
 try {
-    // 3. ดึงสถิติจำนวนผู้เยี่ยมชมบูธวันนี้
+    // 3. ดึงสถิติจำนวนผู้เยี่ยมชมบูธ "วันนี้" (ลีดสะสมวันนี้)
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM booth_visits WHERE exhibitor_id = ? AND DATE(visit_time) = ?");
     $stmt->execute([$exhibitor_id, $today]);
-    $visitor_count = $stmt->fetchColumn();
+    $leads_today = $stmt->fetchColumn();
 
-    // 4. ดึงสรุปยอดจองของบูธตนเอง (Net Value)
+    // 4. ดึงยอดลีด "รวมทั้งหมด"
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM booth_visits WHERE exhibitor_id = ?");
+    $stmt->execute([$exhibitor_id]);
+    $leads_total = $stmt->fetchColumn();
+
+    // 5. ดึงสรุปยอดจองสะสม (Net Value)
     $stmt = $pdo->prepare("SELECT SUM(net_value) FROM transactions WHERE exhibitor_id = ?");
     $stmt->execute([$exhibitor_id]);
-    $total_sales = $stmt->fetchColumn() ?: 0;
+    $total_sales_raw = $stmt->fetchColumn() ?: 0;
+    
+    $total_sales_million = $total_sales_raw / 1000000;
 
 } catch (PDOException $e) {
-    // กรณีฐานข้อมูลขัดข้อง
     error_log($e->getMessage());
-    $visitor_count = 0;
-    $total_sales = 0;
+    $leads_today = 0;
+    $leads_total = 0;
+    $total_sales_million = 0;
 }
 ?>
 <!DOCTYPE html>
@@ -54,13 +73,9 @@ try {
             color: var(--hba-dark);
         }
 
-        .font-prompt { font-family: 'Prompt', sans-serif; }
-
-        /* Welcome Section */
         .welcome-section { padding: 30px 0 10px 0; }
         .welcome-title { font-family: 'Prompt', sans-serif; font-weight: 600; color: var(--hba-navy); }
 
-        /* Stat Cards ดีไซน์ทันสมัย */
         .card-stat {
             border: none;
             border-radius: 20px;
@@ -72,13 +87,12 @@ try {
         .stat-label { font-size: 0.85rem; color: #666; font-weight: 400; }
         .stat-value { font-family: 'Prompt', sans-serif; font-weight: 600; color: var(--hba-navy); }
 
-        /* Action Buttons ขนาดใหญ่สำหรับมือถือ */
         .action-card {
             border: none;
             border-radius: 25px;
             overflow: hidden;
             position: relative;
-            height: 150px;
+            height: 140px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -91,9 +105,9 @@ try {
         .btn-redeem { background: linear-gradient(45deg, #f39c12, #e67e22); color: white; }
 
         .action-card:hover { transform: scale(1.03); color: white; filter: brightness(1.1); }
-        .action-icon { font-size: 3.5rem; opacity: 0.2; position: absolute; right: -10px; bottom: -10px; }
+        .action-icon { font-size: 3rem; opacity: 0.15; position: absolute; right: 10px; bottom: 10px; }
         .action-content { position: relative; z-index: 2; text-align: center; }
-        .action-title { font-family: 'Prompt', sans-serif; font-weight: 600; font-size: 1.3rem; }
+        .action-title { font-family: 'Prompt', sans-serif; font-weight: 600; font-size: 1.2rem; }
     </style>
 </head>
 <body>
@@ -103,36 +117,38 @@ try {
 <div class="container pb-5">
     
     <div class="welcome-section animate__animated animate__fadeIn">
-        <h4 class="welcome-title">แผงควบคุมระบบ</h4>
-        <p class="text-muted small">สรุปข้อมูลงาน Home Focus 2026 วันที่ <?php echo date('d/m/Y'); ?></p>
+        <h4 class="welcome-title">สวัสดีครับ, <?php echo htmlspecialchars($company_name); ?></h4>
+        <p class="text-muted small">สรุปผลการดำเนินงานประจำวันที่ <?php echo $thai_date_full; ?></p>
     </div>
 
     <div class="row g-3 mb-4 animate__animated animate__fadeInUp">
         <div class="col-6">
             <div class="card card-stat">
-                <div class="card-body py-4 text-center text-sm-start">
-                    <div class="stat-label mb-1"><i class="fas fa-users text-info me-1"></i> ลีดสะสมวันนี้</div>
-                    <div class="stat-value h2 mb-0"><?php echo number_format($visitor_count); ?></div>
+                <div class="card-body py-4 text-center">
+                    <div class="stat-label mb-1">ลีดสะสมวันนี้</div>
+                    <div class="stat-value h2 mb-0"><?php echo number_format($leads_today); ?></div>
+                    <small class="text-muted" style="font-size: 0.7rem;">จากทั้งหมด <?php echo number_format($leads_total); ?> ราย</small>
                 </div>
             </div>
         </div>
         <div class="col-6">
             <div class="card card-stat">
-                <div class="card-body py-4 text-center text-sm-start">
-                    <div class="stat-label mb-1"><i class="fas fa-hand-holding-usd text-success me-1"></i> ยอดจอง (ล้าน)</div>
-                    <div class="stat-value h2 mb-0"><?php echo number_format($total_sales / 1000000, 2); ?></div>
+                <div class="card-body py-4 text-center">
+                    <div class="stat-label mb-1">ยอดจอง (ล้านบาท)</div>
+                    <div class="stat-value h2 mb-0 text-success"><?php echo number_format($total_sales_million, 2); ?></div>
+                    <small class="text-muted" style="font-size: 0.7rem;">ยอดสะสมรวมทุกวัน</small>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row g-4 animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+    <div class="row g-3 animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
         <div class="col-12 col-md-6">
             <a href="scan_visitor.php" class="action-card btn-lead">
                 <i class="fas fa-qrcode action-icon"></i>
                 <div class="action-content">
                     <div class="action-title">สแกนเก็บ Lead</div>
-                    <div class="action-desc small opacity-75">บันทึกข้อมูลผู้สนใจ (QR สีฟ้า)</div>
+                    <div class="action-desc small opacity-75">บันทึกข้อมูลผู้สนใจใหม่</div>
                 </div>
             </a>
         </div>
@@ -140,21 +156,26 @@ try {
             <a href="redeem_order.php" class="action-card btn-redeem">
                 <i class="fas fa-ticket-alt action-icon"></i>
                 <div class="action-content">
-                    <div class="action-title">รับออเดอร์ / Redeem</div>
-                    <div class="action-desc small opacity-75">ใช้คูปองส่วนลด (QR สีเหลือง)</div>
+                    <div class="action-title">รับออเดอร์ / จองบ้าน</div>
+                    <div class="action-desc small opacity-75">ใช้ส่วนลดคูปอง 10,000 บาท</div>
                 </div>
             </a>
         </div>
         
         <div class="col-12 animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
-            <div class="card card-stat">
-                <div class="card-body d-flex justify-content-between align-items-center p-4">
-                    <div>
-                        <h6 class="font-prompt mb-1">พบลูกค้า Walk-in?</h6>
-                        <p class="text-muted small mb-0">ลงทะเบียนลูกค้าใหม่ที่ไม่มีคิวอาร์โค้ด</p>
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body d-flex justify-content-between align-items-center p-3">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-light rounded-circle p-2 me-3 text-primary">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div>
+                            <h6 class="font-prompt mb-0">พบลูกค้า Walk-in?</h6>
+                            <small class="text-muted">ลงทะเบียนลูกค้าที่ไม่มีคิวอาร์</small>
+                        </div>
                     </div>
-                    <a href="register_walkin.php" class="btn btn-outline-primary rounded-pill px-4 font-prompt">
-                        <i class="fas fa-user-plus me-1"></i> ลงทะเบียน
+                    <a href="register_walkin.php" class="btn btn-outline-primary rounded-pill btn-sm px-4">
+                        ไปหน้าลงทะเบียน
                     </a>
                 </div>
             </div>
