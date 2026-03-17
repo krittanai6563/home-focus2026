@@ -2,8 +2,15 @@
 session_start();
 require '../config/db_config.php';
 
+// ดักจับการมีอยู่ของ session เพื่อ Redirect ให้ถูกหน้า
 if (isset($_SESSION['exhibitor_id'])) {
-    header("Location: dashboard.php");
+    if ($_SESSION['role'] === 'superadmin') {
+        header("Location: superadmin_dashboard.php");
+    } elseif ($_SESSION['role'] === 'admin') {
+        header("Location: admin_dashboard.php");
+    } else {
+        header("Location: dashboard.php");
+    }
     exit;
 }
 
@@ -22,10 +29,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['role'] = $user['role']; 
         $_SESSION['profile_img'] = $user['profile_img'] ?: 'default-profile.png';
         
-        if ($_SESSION['role'] === 'admin') {
-            header("Location: admin_dashboard.php");
+        // === เพิ่มเงื่อนไขการแยกสิทธิ์ (Role) ตรงนี้ ===
+        if ($_SESSION['role'] === 'superadmin') {
+            header("Location: superadmin_dashboard.php"); // ไปหน้าผู้ดูแลระบบสูงสุด
+        } elseif ($_SESSION['role'] === 'admin') {
+            header("Location: admin_dashboard.php");      // ไปหน้าแอดมินสมาคม
         } else {
-            header("Location: dashboard.php");
+            header("Location: dashboard.php");            // ไปหน้าผู้ประกอบการ (บูธ)
         }
         exit;
     } else {
@@ -170,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <div class="card-header">
                     <div class="brand-text">HOME FOCUS 2026</div>
                     <div class="mt-1">
-                        <span class="badge rounded-pill bg-primary px-3 py-2" style="font-size: 0.7rem; font-weight: 300;">EXHIBITOR PORTAL</span>
+                        <span class="badge rounded-pill bg-primary px-3 py-2" style="font-size: 0.7rem; font-weight: 300;">MASTER SYSTEM</span>
                     </div>
                 </div>
                 <div class="card-body p-4 p-lg-5">

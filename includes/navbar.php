@@ -1,4 +1,7 @@
 <?php
+// ตรวจสอบหน้าปัจจุบัน เพื่อนำไปทำ Active Menu (ขีดเส้นใต้)
+$current_page = basename($_SERVER['PHP_SELF']);
+
 // ตรวจสอบและตั้งค่ารูปโปรไฟล์
 $nav_company_name = isset($_SESSION['company_name']) ? $_SESSION['company_name'] : 'ผู้ประกอบการ';
 $nav_profile_img = (!empty($_SESSION['profile_img']) && $_SESSION['profile_img'] !== 'default-profile.png') 
@@ -13,7 +16,7 @@ $nav_profile_img = (!empty($_SESSION['profile_img']) && $_SESSION['profile_img']
         --nav-sky: #00a8ff;
     }
 
-    /* 1. Glassmorphism Design (โปร่งแสงและเบลอ) */
+    /* 1. Glassmorphism Design */
     .modern-navbar {
         background: rgba(0, 35, 71, 0.85); 
         backdrop-filter: blur(12px); 
@@ -59,13 +62,15 @@ $nav_profile_img = (!empty($_SESSION['profile_img']) && $_SESSION['profile_img']
 
     .modern-nav-link:hover, .modern-nav-link.active {
         color: #ffffff !important;
+        font-weight: 500;
     }
 
+    /* ทำให้เส้นใต้แสดงผลเมื่อมีคลาส .active */
     .modern-nav-link:hover::after, .modern-nav-link.active::after {
         width: 70%; 
     }
 
-    /* 3. กรอบโปรไฟล์แบบแคปซูล (Pill Profile) */
+    /* 3. กรอบโปรไฟล์แบบแคปซูล (เปลี่ยนเป็นแสดงผลเฉยๆ ไม่ใช่ปุ่มกดแล้ว) */
     .profile-pill {
         display: flex;
         align-items: center;
@@ -73,14 +78,6 @@ $nav_profile_img = (!empty($_SESSION['profile_img']) && $_SESSION['profile_img']
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 50px;
         padding: 6px 6px 6px 20px;
-        text-decoration: none;
-        transition: all 0.3s ease;
-    }
-
-    .profile-pill:hover {
-        background: rgba(255, 255, 255, 0.12);
-        border-color: rgba(255, 255, 255, 0.2);
-        transform: translateY(-2px);
     }
 
     .profile-img-modern {
@@ -91,34 +88,26 @@ $nav_profile_img = (!empty($_SESSION['profile_img']) && $_SESSION['profile_img']
         box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
 
-    /* 4. Dropdown Menu โค้งมนและนุ่มนวล */
-    .modern-dropdown {
-        border: 1px solid rgba(0,0,0,0.05);
-        border-radius: 20px;
-        box-shadow: 0 15px 35px rgba(0, 35, 71, 0.15);
-        padding: 12px 0;
-        min-width: 220px;
-        animation: dropFade 0.3s ease forwards;
+    /* 4. ปุ่มออกจากระบบ */
+    .btn-logout {
+        font-family: 'Prompt', sans-serif;
+        background-color: rgba(220, 53, 69, 0.1);
+        color: #ff6b6b;
+        border: 1px solid rgba(220, 53, 69, 0.3);
+        border-radius: 50px;
+        padding: 8px 20px;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
     }
 
-    @keyframes dropFade {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .modern-dropdown-item {
-        font-family: 'Sarabun', sans-serif;
-        padding: 10px 24px;
-        color: var(--nav-navy);
-        font-weight: 500;
-        transition: 0.2s;
-        border-left: 3px solid transparent;
-    }
-
-    .modern-dropdown-item:hover {
-        background-color: #f0f5fa;
-        color: var(--nav-blue);
-        border-left-color: var(--nav-sky);
+    .btn-logout:hover {
+        background-color: #dc3545;
+        color: #ffffff;
+        border-color: #dc3545;
+        transform: translateY(-2px);
     }
 
     .navbar-toggler { border: none; padding: 5px; }
@@ -139,73 +128,48 @@ $nav_profile_img = (!empty($_SESSION['profile_img']) && $_SESSION['profile_img']
         <div class="collapse navbar-collapse" id="mainNavbar">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0 mt-3 mt-lg-0 ms-lg-4">
                 <li class="nav-item">
-                    <a class="nav-link modern-nav-link active" href="dashboard.php">
+                    <a class="nav-link modern-nav-link <?php echo ($current_page == 'dashboard.php') ? 'active' : ''; ?>" href="dashboard.php">
                         <i class="fas fa-chart-pie me-1 opacity-75"></i> แดชบอร์ด
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link modern-nav-link" href="scan_visitor.php">
+                    <a class="nav-link modern-nav-link <?php echo ($current_page == 'scan_visitor.php') ? 'active' : ''; ?>" href="scan_visitor.php">
                         <i class="fas fa-qrcode me-1 opacity-75"></i> สแกนลีด
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link modern-nav-link" href="redeem_order.php">
+                    <a class="nav-link modern-nav-link <?php echo ($current_page == 'redeem_order.php') ? 'active' : ''; ?>" href="redeem_order.php">
                         <i class="fas fa-ticket-alt me-1 opacity-75"></i> รับออเดอร์
                     </a>
                 </li>
+               
                 <li class="nav-item">
-                    <a class="nav-link modern-nav-link" href="register_walkin.php">
-                        <i class="fas fa-user-plus me-1 opacity-75"></i> ลูกค้า Walk-in
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link modern-nav-link" href="index.php">
+                    <a class="nav-link modern-nav-link <?php echo ($current_page == 'index.php') ? 'active' : ''; ?>" href="index.php">
                         <i class="fas fa-file-alt me-1 opacity-75"></i> รายงาน
                     </a>
                 </li>
             </ul>
             
-            <div class="d-flex align-items-center mt-3 mt-lg-0">
-                <div class="dropdown">
-                    <a class="profile-pill" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <div class="text-end me-3 d-none d-lg-block">
-                            <div class="font-prompt fw-semibold text-white lh-1" style="font-size: 0.9rem;">
-                                <?php echo htmlspecialchars($nav_company_name); ?>
-                            </div>
-                            <small style="color: var(--nav-sky); font-size: 0.7rem;">Exhibitor Account</small>
+            <div class="d-flex flex-column flex-lg-row align-items-lg-center mt-3 mt-lg-0 gap-3">
+                
+                <div class="profile-pill">
+                    <div class="text-end me-3 d-none d-lg-block">
+                        <div class="font-prompt fw-semibold text-white lh-1" style="font-size: 0.9rem;">
+                            <?php echo htmlspecialchars($nav_company_name); ?>
                         </div>
-                        <img src="<?php echo htmlspecialchars($nav_profile_img); ?>" alt="Profile" class="profile-img-modern">
-                        <span class="d-lg-none ms-3 font-prompt fw-bold text-white"><?php echo htmlspecialchars($nav_company_name); ?></span>
-                    </a>
-                    
-                    <ul class="dropdown-menu dropdown-menu-end modern-dropdown mt-lg-3">
-                        <li class="d-lg-none">
-                            <h6 class="dropdown-header font-prompt text-muted" style="font-size: 0.8rem;">ผู้ประกอบการ</h6>
-                        </li>
-                        <li>
-                            <a class="dropdown-item modern-dropdown-item" href="#">
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-light rounded-circle p-2 me-3 text-center" style="width: 35px; height: 35px; line-height: 18px;">
-                                        <i class="fas fa-cog text-muted"></i>
-                                    </div>
-                                    ตั้งค่าบัญชี
-                                </div>
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider my-2 opacity-10"></li>
-                        <li>
-                            <a class="dropdown-item modern-dropdown-item text-danger" href="logout.php">
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-danger bg-opacity-10 rounded-circle p-2 me-3 text-center" style="width: 35px; height: 35px; line-height: 18px;">
-                                        <i class="fas fa-sign-out-alt"></i>
-                                    </div>
-                                    <span class="fw-bold">ออกจากระบบ</span>
-                                </div>
-                            </a>
-                        </li>
-                    </ul>
+                        <small style="color: var(--nav-sky); font-size: 0.7rem;">Exhibitor Account</small>
+                    </div>
+                    <img src="<?php echo htmlspecialchars($nav_profile_img); ?>" alt="Profile" class="profile-img-modern">
+                    <span class="d-lg-none ms-3 font-prompt fw-bold text-white"><?php echo htmlspecialchars($nav_company_name); ?></span>
                 </div>
+                
+                <a href="logout.php" class="btn-logout">
+                    <i class="fas fa-sign-out-alt me-2"></i> 
+                </a>
+
             </div>
         </div>
     </div>
 </nav>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

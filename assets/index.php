@@ -240,7 +240,7 @@ try {
                                 </td>
                                 <td>
                                     <div class="small">งบ: <span class="text-primary fw-bold"><?php echo $row['budget_range'] ?: '-'; ?></span></div>
-                                    <div class="small text-muted">พื้นที่: <?php echo $row['usable_area'] ?: '-'; ?> (<?php echo $row['floor_count'] ?: '-'; ?> ชั้น)</div>
+                                    <div class="small text-muted">พื้นที่: <?php echo $row['usable_area'] ?: '-'; ?> (<?php echo $row['floor_count'] ?: '-'; ?>)</div>
                                 </td>
                                 <td class="text-center">
                                     <?php 

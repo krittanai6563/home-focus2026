@@ -16,14 +16,11 @@ $profile_img = $_SESSION['profile_img'] ?: 'default-profile.png';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        /* ---------------------------------------------------
-           ดีไซน์ดั้งเดิมของคุณ (หน้าสแกน & ค้นหา)
-        --------------------------------------------------- */
         :root {
             --hba-dark: #001a33;
             --hba-navy: #003366;
             --hba-blue: #0056b3;
-            --hba-sky: #00a8ff; /* เพิ่มสีฟ้าสำหรับไอคอน */
+            --hba-sky: #00a8ff; 
             --hba-light: #f8fafd;
         }
 
@@ -77,11 +74,8 @@ $profile_img = $_SESSION['profile_img'] ?: 'default-profile.png';
         .divider:not(:empty)::before { margin-right: .5em; }
         .divider:not(:empty)::after { margin-left: .5em; }
 
-        #preview-section, #scan-result { display: none; }
+        #preview-section, #scan-result, #loading-section { display: none; }
 
-        /* ---------------------------------------------------
-           ดีไซน์ใหม่เพิ่มเติม (เฉพาะกล่องแสดงข้อมูล Grid)
-        --------------------------------------------------- */
         .info-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -135,14 +129,18 @@ $profile_img = $_SESSION['profile_img'] ?: 'default-profile.png';
             
             <input type="hidden" id="current-qr-data">
             
-            <div class="d-flex gap-2 justify-content-center">
-                <button onclick="confirmCheckIn()" class="btn btn-success btn-action w-50 shadow-sm">
-                    <i class="fas fa-save me-1"></i> ยืนยันบันทึก
-                </button>
-                <button onclick="resetScanner()" class="btn btn-outline-secondary btn-action w-50 shadow-sm">
-                    <i class="fas fa-times me-1"></i> ยกเลิก
-                </button>
+            <div id="action-buttons-container" class="mt-3"></div>
+
+        </div>
+    </div>
+
+    <div id="loading-section" class="card card-custom animate__animated animate__fadeIn">
+        <div class="card-body text-center py-5">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem; border-width: 0.25em;" role="status">
+                <span class="visually-hidden">Loading...</span>
             </div>
+            <h5 class="font-prompt fw-bold mt-4 text-navy">กำลังบันทึกข้อมูล...</h5>
+            <p class="text-muted small mb-0">กรุณารอสักครู่ ระบบกำลังจัดเก็บข้อมูลเข้าระบบ</p>
         </div>
     </div>
 
@@ -201,11 +199,13 @@ function processData(qrData) {
     document.getElementById('reader').style.display = 'none';
     document.getElementById('manual-section').style.display = 'none';
     document.getElementById('scan-result').style.display = 'none';
+    document.getElementById('loading-section').style.display = 'none'; 
     
     document.getElementById('preview-section').style.display = 'block';
     document.getElementById('preview-name').innerHTML = '<i class="fas fa-circle-notch fa-spin text-primary"></i> กำลังดึงข้อมูล...';
     document.getElementById('preview-phone').innerText = '';
     document.getElementById('preview-details').innerHTML = '';
+    document.getElementById('action-buttons-container').innerHTML = ''; // เคลียร์ปุ่มเก่า
     
     fetch('../api/get_visitor_info.php', {
         method: 'POST',
@@ -223,7 +223,6 @@ function processData(qrData) {
             document.getElementById('preview-phone').innerHTML = `<i class="fas fa-mobile-alt me-1 text-primary"></i> ${data.phone}`;
             document.getElementById('current-qr-data').value = qrData;
             
-            // นำข้อมูลมาเรียงในกริดดีไซน์สวยๆ
             document.getElementById('preview-details').innerHTML = `
                 <div class="info-box">
                     <div class="info-label">งบประมาณ</div>
@@ -242,6 +241,36 @@ function processData(qrData) {
                     <div class="info-value"><i class="fas fa-layer-group info-icon"></i>${data.floor || '-'}</div>
                 </div>
             `;
+
+            // === จุดที่เปลี่ยนแปลง: จัดการปุ่มกดตามสถานะ Check-in ===
+      
+            let btnHtml = '';
+            if (data.check_in_status == 1) {
+                // หากเคยเช็คอินแล้ว จะซ่อนปุ่มยืนยัน และโชว์คำเตือนแทน
+                btnHtml = `
+                    <div class="alert alert-warning py-2 mb-3 text-center font-prompt small fw-bold" style="border-radius: 10px;">
+                        <i class="fas fa-exclamation-triangle me-1"></i> ลูกค้ารายนี้ได้ทำการเช็คอินเข้างานไปแล้ว
+                    </div>
+                    <button onclick="resetScanner()" class="btn btn-secondary btn-action w-100 shadow-sm">
+                        <i class="fas fa-qrcode me-1"></i> กลับไปหน้าสแกน
+                    </button>
+                `;
+            } else {
+                // หากยังไม่เคยเช็คอิน จะโชว์ปุ่มยืนยันตามปกติ
+                btnHtml = `
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button onclick="confirmCheckIn()" class="btn btn-success btn-action w-50 shadow-sm">
+                            <i class="fas fa-save me-1"></i> ยืนยันเช็คอิน
+                        </button>
+                        <button onclick="resetScanner()" class="btn btn-outline-secondary btn-action w-50 shadow-sm">
+                            <i class="fas fa-times me-1"></i> ยกเลิก
+                        </button>
+                    </div>
+                `;
+            }
+            // วาดปุ่มลงไปใน Container
+            document.getElementById('action-buttons-container').innerHTML = btnHtml;
+
         } else {
             document.getElementById('preview-section').style.display = 'none';
             showResultCard(false, 'ไม่พบข้อมูลลูกค้า', data.message);
@@ -251,18 +280,11 @@ function processData(qrData) {
     .catch(error => { alert(error.message); resetScanner(); });
 }
 
-function resetScanner() {
-    document.getElementById('preview-section').style.display = 'none';
-    document.getElementById('scan-result').style.display = 'none';
-    document.getElementById('reader').style.display = 'block';
-    document.getElementById('manual-section').style.display = 'block';
-    document.getElementById('manual-phone').value = '';
-    try { html5QrcodeScanner.resume(); } catch (err) {}
-}
-
 function confirmCheckIn() {
     const qrData = document.getElementById('current-qr-data').value;
+    
     document.getElementById('preview-section').style.display = 'none';
+    document.getElementById('loading-section').style.display = 'block';
     
     fetch('../api/record_visit.php', {
         method: 'POST',
@@ -271,13 +293,29 @@ function confirmCheckIn() {
     })
     .then(response => response.json())
     .then(data => {
+        document.getElementById('loading-section').style.display = 'none';
+        
         if(data.success) {
             showResultCard(true, data.name, data.message || 'จัดเก็บ Lead สำเร็จ!');
             document.getElementById('no-data-action').classList.add('d-none');
         } else {
             showResultCard(false, data.name || 'ผิดพลาด', data.message);
         }
+    })
+    .catch(error => {
+        document.getElementById('loading-section').style.display = 'none';
+        showResultCard(false, 'ขัดข้อง', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
     });
+}
+
+function resetScanner() {
+    document.getElementById('preview-section').style.display = 'none';
+    document.getElementById('scan-result').style.display = 'none';
+    document.getElementById('loading-section').style.display = 'none'; 
+    document.getElementById('reader').style.display = 'block';
+    document.getElementById('manual-section').style.display = 'block';
+    document.getElementById('manual-phone').value = '';
+    try { html5QrcodeScanner.resume(); } catch (err) {}
 }
 
 function showResultCard(isSuccess, name, msg) {

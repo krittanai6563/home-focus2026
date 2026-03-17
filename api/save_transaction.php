@@ -9,9 +9,11 @@ header('Content-Type: application/json; charset=utf-8');
 $visitor_id   = isset($_POST['visitor_id']) ? $_POST['visitor_id'] : '';
 $exhibitor_id = $_SESSION['exhibitor_id']; 
 $detail       = isset($_POST['detail']) ? $_POST['detail'] : '';
-$value        = isset($_POST['value']) ? $_POST['value'] : 0;
-$discount     = isset($_POST['discount']) ? $_POST['discount'] : 0;
-$net_value    = isset($_POST['net_value']) ? $_POST['net_value'] : 0;
+$value        = isset($_POST['value']) ? (float)$_POST['value'] : 0;
+$discount     = isset($_POST['discount']) ? (float)$_POST['discount'] : 0;
+
+// คำนวณ net_value ในฝั่ง Server เลย
+$net_value    = $value - $discount;
 
 if (empty($visitor_id)) {
     echo json_encode(['success' => false, 'message' => 'ไม่พบข้อมูลลูกค้า (visitor_id is missing)']);
@@ -19,7 +21,7 @@ if (empty($visitor_id)) {
 }
 
 try {
-    // บันทึกข้อมูลลงตาราง transactions (ใช้ชื่อคอลัมน์ที่ปรับปรุงแล้ว)
+    // บันทึกข้อมูลลงตาราง transactions
     $stmt = $pdo->prepare("INSERT INTO transactions (visitor_id, exhibitor_id, item_detail, total_value, discount_amount, net_value) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt->execute([
         $visitor_id, 

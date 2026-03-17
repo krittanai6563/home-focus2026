@@ -162,24 +162,7 @@ try {
             </a>
         </div>
         
-        <div class="col-12 animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body d-flex justify-content-between align-items-center p-3">
-                    <div class="d-flex align-items-center">
-                        <div class="bg-light rounded-circle p-2 me-3 text-primary">
-                            <i class="fas fa-user-plus"></i>
-                        </div>
-                        <div>
-                            <h6 class="font-prompt mb-0">พบลูกค้า Walk-in?</h6>
-                            <small class="text-muted">ลงทะเบียนลูกค้าที่ไม่มีคิวอาร์</small>
-                        </div>
-                    </div>
-                    <a href="register_walkin.php" class="btn btn-outline-primary rounded-pill btn-sm px-4">
-                        ไปหน้าลงทะเบียน
-                    </a>
-                </div>
-            </div>
-        </div>
+       
     </div>
 
     <div class="text-center mt-5 opacity-50">
